@@ -1,0 +1,22 @@
+{
+  "name": "packagejson",
+  "version": "1.0.0",
+  "description": "package.json demo",
+  "main": "societyapp.js",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.4",
+    "express-fileupload": "^0.2.0",
+    "express-html": "^1.0.1",
+    "express-session": "^1.15.5",
+    "express-validator": "^4.1.1",
+    "mongoose": "^4.11.10",
+    "request": "^2.81.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "gargi kantesaria",
+  "license": "ISC"
+}
