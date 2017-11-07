@@ -1,5 +1,5 @@
 var mon=require("mongoose");
-mon.connect("mongodb://localhost/societymanagement_app");
+mon.connect(process.env.DB_URL);
 
 var feedwallstruct =new mon.Schema({
 

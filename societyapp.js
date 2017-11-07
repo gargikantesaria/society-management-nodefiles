@@ -1,21 +1,17 @@
 var exp = require("express");
 var bodyParser = require("body-parser");
 var app = exp();
+require('dotenv').config();
+var router=exp.Router();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-var jwt=require('jsonwebtoken');
-var userschema=require("./userschema.js")
-var vehicleschema=require("./vehicleschema.js");
-var feedwallschema=require("./feedwallschema.js");
-var commentschema=require("./commentschema.js");
-var likesschema=require("./likeschema.js");
-var multer = require('multer');
-var md5=require('md5');
-// set the directory for the uploads to the uploaded to
-var DIR = './uploads/';
-//define the type of upload multer would be doing and pass in its destination, in our case, its a single file with the name photo
-var upload = multer({dest: DIR}).single('photo');
 
+var usermodule=require("./modules/usermodule.js");
+var vehiclemodule=require("./modules/vehiclemodule.js");
+var feedmodule=require("./modules/feedmodule.js")
+var userschema=require("./userschema.js")
+
+console.log(process.env.PORT);
 app.use(function (req, res, next) {
     
         // Website you wish to allow to connect
@@ -26,13 +22,11 @@ app.use(function (req, res, next) {
         next();
 });
  
-
+app.use(router);
 app.get("",function(req,res){
     console.log("home page");
     res.send("done")
 })
-
-
 
 // app.post("/storeimage",function(req,res){
 // var path="";
@@ -55,343 +49,44 @@ app.get("",function(req,res){
 // })
 
 
-app.post("/signup",function(req,res)
-{
-    var path="";
-        upload(req,res,function(err){
-            if(err)
-            {
-                console.log(err);
-                res.send({body:"error arrieved"})
-            }
-            else if(req.file){
+//app.post("/signup",usermodule.signup)
+router.route("/signup").post(usermodule.signup)
 
-                // path=req.file.path;
-                //mimetype=req.file.mimetype;
-                path=req.file.filename+"."+req.file.mimetype.substr(6,(req.file.mimetype.length-1));
-                //res.send({body:JSON.parse(req.body.formdata),data:path});
-            }
+//app.post("/loginform",usermodule.login)
+router.route("/loginform").post(usermodule.login)
 
-            var formdata=JSON.parse(req.body.formdata);
-            firstname=formdata.firstname;
-            lastname=formdata.lastname;
-            birthdate=formdata.birthdate;
-            email=formdata.email;
-            password=formdata.password;
-            var encryptpassword=md5(password);
-            console.log(encryptpassword);
-            flatpurchasedate=formdata.flatpurchasedate;
-            //picture=req.file.picture;
-            picturefilenm=path;
-            flatblock=formdata.flatblock;
-            flatno=formdata.flatno;
+// app.get("/userdata",isloggin,usermodule.userdata)
+router.route("/userdata").get(isloggin,usermodule.userdata)
 
-            var token=jwt.sign(email,"secretmsg");
+// app.post("/addvehicleform",isloggin,vehiclemodule.addvehicledata)
+router.route("/addvehicleform").post(isloggin,vehiclemodule.addvehicledata)
 
-            var userdata={firstname:firstname,lastname:lastname,birthdate:birthdate,email:email,password:encryptpassword,flatpurchasedate:flatpurchasedate,picture:"./uploads/"+picturefilenm,flatblock:flatblock,flatno:flatno,signuptoken:token,maintainence:[{ispaid:true,month:7}]}
-            //console.log(req.body); return
-            
-            userschema.create(userdata,function(err,body)
-            {
-                if(err)
-                {
-                    console.log("error arrive");
-                }
-                else
-                {
-                    console.log("data inserted");
-                    res.send({message:"data stored",data:body},200);
-                }
-            })
-        })
-})
+// app.get("/listallvehicles",isloggin,vehiclemodule.listallvehicle)
+router.route("/listallvehicles").get(isloggin,vehiclemodule.listallvehicle)
 
+// app.get("/listmyvehicles",isloggin,vehiclemodule.listmyvehicle)
+router.route("/listmyvehicles").get(isloggin,vehiclemodule.listmyvehicle)
 
-app.post("/loginform",function(req,res){
-    var email=req.body.email;
-    var password=req.body.password;
-    var encryptpassword=md5(password);
-    console.log(encryptpassword);
+// app.delete("/deletemyvehicles/:id",isloggin,vehiclemodule.deletemyvehicle)
+router.route("/deletemyvehicles/:id").delete(isloggin,vehiclemodule.deletemyvehicle)
 
-    console.log(req.body);
-    userschema.findOne({email},function(err,data){
-    
-       console.log(data);
-       if(data===null)
-       {
-           res.send({body:"data not found"},400);
-           return;
-       }
-       else{
-        if(data.email=== email && data.password===encryptpassword)
-        {
-            res.send({body:"login successfull",data:data},200);
-            console.log("login successful");
-        }
-        else{
-            res.send({body:"try again"},400);
-            return;
-        } 
-       }     
-            
-    })
-})
+// app.put("/editmyvehicles/:id",isloggin,vehiclemodule.editmyvehicle)
+router.route("/editmyvehicles/:id").put(isloggin,vehiclemodule.editmyvehicle)
 
-app.get("/userdata",isloggin,function(req,res){
+// app.post("/addfeedform",isloggin,feedmodule.addfeedform)
+router.route("/addfeedform").post(isloggin,feedmodule.addfeedform)
 
-    userid=req.body.userid;
-    userschema.findOne({_id:userid},function(err,data){
-        if(err)
-        {
-            res.send({body:"error in finding userdata"});
-        }
-        else
-        {
-            console.log(data);
-            res.send({data:data,body:"userdata found"});
-        }
-    })
-})
+// app.get("/displayfeedform",isloggin,feedmodule.displayfeedform)
+router.route("/displayfeedform/:page").get(isloggin,feedmodule.displayfeedform)
 
-app.post("/addvehicleform",isloggin,function(req,res){
+// app.post("/addcommentform/:id",isloggin,feedmodule.addcomment)
+router.route("/addcommentform/:id").post(isloggin,feedmodule.addcomment)
 
-    vehicletype=req.body.vehicletype;
-    vehicleregistrationno=req.body.vehicleregistrationno;
-    vehiclecolor=req.body.vehiclecolor;
-    // userid=req.params.id;
-    userid=req.body.userid;
-    console.log(userid);
-    var vehicledata={vehicletype:vehicletype,vehicleregistrationno:vehicleregistrationno,vehiclecolor:vehiclecolor,userid:userid}
-    
-    vehicleschema.create(vehicledata,function(err,body){
-        if(err)
-        {
-            console.log("error arrive in adding vehicle data");
-        }
-        else
-        {
-            console.log("vehicle data added");
-            res.send({body:"vehicle data added",data:body},200);
-        }
-    })
-})
+// app.get("/addlikes/:id",isloggin,feedmodule.addlikes)
+router.route("/addlikes/:id").get(isloggin,feedmodule.addlikes)
 
-app.get("/listallvehicles",isloggin,function(req,res){
-
-    vehicleschema.find({},function(err,data){
-        if(err)
-        {
-            console.log("error arrive in getting vehicle data");
-        }
-        else
-        {
-            console.log("data get successfully");
-            res.send(data)
-        }
-    })
-})
-
-app.get("/listmyvehicles",isloggin,function(req,res){
-
-    // userid=req.params.id;
-    userid=req.body.userid;
-    vehicleschema.find({userid},function(err,data){
-        if(err)
-        {
-            console.log("error arrive in getting  your vehicle data");
-        }
-        else
-        {
-            console.log(" your data get successfully");
-            res.send(data);
-        }
-    })
-})
-
-app.delete("/deletemyvehicles/:id",isloggin,function(req,res){
-
-    vehicleid=req.params.id;
-    console.log(vehicleid)
-    vehicleschema.findByIdAndRemove({_id:vehicleid},function(err,data)
-    {
-       if(err)
-       {
-           console.log("data is not deleted",err)
-       } 
-       else
-       {
-            res.send({body:"data is deleted"},200)
-            console.log("data deleted");
-       }
-    })
-})
-
-app.put("/editmyvehicles/:id",isloggin,function(req,res){
-
-    vehicleid=req.params.id;
-    console.log(vehicleid);
-    vehicletype=req.body.vehicletype;
-    vehicleregistrationno=req.body.vehicleregistrationno;
-    vehiclecolor=req.body.vehiclecolor;
-    userid=req.body.userid;
-    var vehicledata={vehicletype:vehicletype,vehicleregistrationno:vehicleregistrationno,vehiclecolor:vehiclecolor,userid:userid}    
-
-    vehicleschema.findByIdAndUpdate({_id:vehicleid},vehicledata,function(err,data){
-        if(err)
-        {
-            console.log("data is not updated",err)
-        }
-        else
-        {
-             res.send({body:"data is updated"},200)
-             console.log("data updated");
-        }
-    })
-})
-
-app.post("/addfeedform",isloggin,function(req,res)
-{
-    var feedstatus=req.body.feedstatus;
-    var feedimage=req.body.feedimage;
-    // var userid=req.params.id;
-    var userid=req.body.userid;
-
-    var feeddata={feedstatus:feedstatus,feedimage:feedimage,userid:userid}
-    feedwallschema.create(feeddata,function(err,data)
-    {
-        if(err)
-        {
-            res.send({body:"error in adding feed"},400)
-        }
-        else{
-            res.send({body:"feed added successfully",data:data},200)
-        }
-    })
-})
-
-app.get("/displayfeedform",isloggin,function(req,res)
-{
-    feedwallschema.find({}).populate('commentschema, likeschema.userid','firstname lastname').exec(function(err,data){
-        if(err)
-        {
-            console.log("error arrive in getting feedwall data",err);
-        }
-        else
-        {
-            console.log("feedwall data get successfully");
-            res.send(data);
-        } 
-    })
-})
-
-app.post("/addcommentform/:id",isloggin,function(req,res){
-
-    feedid=req.params.id;
-    comment=req.body.comment;
-    userid=req.body.userid;
-   
-    var commentdata={'userid':userid,'comment':comment}
-   
-    feedwallschema.findOneAndUpdate({_id:feedid},{$push:{commentschema:commentdata}},function(err,data)
-    {
-        if(err)
-        {
-            console.log("error arrieve in adding comments",err)
-        }
-        else
-        {
-            res.send({body:"comment added successfully",data:data},200)
-           
-        }
-    })
-
-})
-
-// app.get("/displaycomments",isloggin,function(req,res){
-
-//     feedwallschema.find({}).populate('commentschema').exec(function(err,data)
-//     {
-//        if(err)
-//        {
-//            console.log("comment data isn't displayed",err)
-//        }
-//        else
-//        {
-//            res.send({data:data,body:"comments data sended"});
-//        } 
-//     })
-// })
-
-app.get("/addlikes/:id",isloggin,function(req,res){
-
-    feedid=req.params.id;
-    userid=req.body.userid;
-
-    var likedata={'userid':userid};
-
-    feedwallschema.findOne({_id:feedid,'likeschema.userid':userid},function(err,data){
-        
-        if(data===null)
-        {
-            feedwallschema.findByIdAndUpdate({_id:feedid},{$push:{likeschema:likedata}},function(err,data)
-            {
-                if(err)
-                {
-                    console.log(err,"error arrive in adding like data");
-                }
-               
-                else
-                {
-                    console.log("likes data added");
-                    res.send({body:"likes added successfully",data:data},200)
-                }
-            })
-        }
-        else
-        {
-            res.send({body:"you already liked"});
-        }
-    })
-
-    
-})
-
-
-// app.get("/getlikesdata/:id",isloggin,function(req,res)
-// {
-//     feedid=req.params.id;
-//     feedwallschema.find({_id:feedid}).populate('likeschema.userid','firstname lastname').exec(function(err,data){
-//         if(err)
-//         {
-//             console.log(err,"like data cant get")
-//         }
-//         else{
-//             console.log("like data got",data)
-//             res.send({body:"like data got",data:data},200)
-//         }
-//     })
-// })
-
-app.post("/findmaintainence",isloggin,isadmin,function(req,res)
-{
-        month=req.body.month;
-        block=req.body.block;
-        userid=req.body.userid;
-
-        userschema.find({'maintainence.month':month,'flatblock':block},function(err,data){
-
-            if(err)
-            {
-                console.log("maintainence data cant displayed");
-                res.send({body:"maintainence data is not found"});
-            }
-            else
-            {
-                console.log("maintainence data displayed");
-                res.send({body:"maintainence data found",data:data});
-            }
-        })
-})
+// app.post("/findmaintainence",isloggin,isadmin,usermodule.maintainencedata)
+router.route("/findmaintainence").post(isloggin,isadmin,usermodule.maintainencedata)
 
 
 function isloggin(req,res,next)
@@ -406,7 +101,6 @@ function isloggin(req,res,next)
         }
         else 
         {
-            //res.status(200).send({body:"you are authenticated"});
             req.body.userid=data._id;
             next();
         }
@@ -415,7 +109,6 @@ function isloggin(req,res,next)
 
 function isadmin(req,res,next)
 {
-    // var isadmintoken=req.headers.isadmintoken;
     var authtoken=req.headers.authtoken;
     userschema.findOne({signuptoken:authtoken},function(err,data){
         if(data.isadmintoken==1)
@@ -430,6 +123,6 @@ function isadmin(req,res,next)
     
 }
 
-app.listen(3000,function(){
+app.listen(process.env.PORT,function(){
     console.log("server started");
 })
